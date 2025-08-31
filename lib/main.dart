@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:datasetcam/camera_screen.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 List<CameraDescription> cameras = [];
 
 Future<void> main() async {
+  // Add `screen_brightness: ^2.0.0` to your `pubspec.yaml`
   WidgetsFlutterBinding.ensureInitialized();
 
   try {

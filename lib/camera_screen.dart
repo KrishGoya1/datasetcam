@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:datasetcam/services/image_saver.dart';
 import 'package:datasetcam/widgets/shutter_button.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -16,10 +20,13 @@ class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
   bool isCameraReady = false;
+  double _originalBrightness = 0;
 
   @override
   void initState() {
     super.initState();
+    _setFullBrightness(); // Set brightness when the screen loads
+
     final frontCamera = widget.cameras.firstWhere(
       (camera) => camera.lensDirection == CameraLensDirection.front,
       orElse: () => widget.cameras.first,
@@ -41,8 +48,26 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void dispose() {
+    _restoreBrightness(); // Restore brightness when the screen is disposed
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _setFullBrightness() async {
+    try {
+      _originalBrightness = await ScreenBrightness().current;
+      await ScreenBrightness().setScreenBrightness(1.0);
+    } catch (e) {
+      debugPrint("Failed to set brightness: $e");
+    }
+  }
+
+  Future<void> _restoreBrightness() async {
+    try {
+      await ScreenBrightness().setScreenBrightness(_originalBrightness);
+    } catch (e) {
+      debugPrint("Failed to restore brightness: $e");
+    }
   }
 
   Future<void> _takePicture() async {
