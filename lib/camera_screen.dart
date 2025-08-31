@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:datasetcam/services/image_saver.dart';
-import 'package:datasetcam/widgets/shutter_button.dart';
 import 'package:screen_brightness/screen_brightness.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+import 'package:datasetcam/services/camera_sequence_service.dart';
+import 'package:datasetcam/widgets/shutter_button.dart';
 
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -21,11 +19,12 @@ class _CameraScreenState extends State<CameraScreen> {
   late Future<void> _initializeControllerFuture;
   bool isCameraReady = false;
   double _originalBrightness = 0;
+  bool _isRedOverlayActive = false;
 
   @override
   void initState() {
     super.initState();
-    _setFullBrightness(); // Set brightness when the screen loads
+    _setFullBrightness();
 
     final frontCamera = widget.cameras.firstWhere(
       (camera) => camera.lensDirection == CameraLensDirection.front,
@@ -48,7 +47,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void dispose() {
-    _restoreBrightness(); // Restore brightness when the screen is disposed
+    _restoreBrightness();
     _controller.dispose();
     super.dispose();
   }
@@ -70,24 +69,11 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> _takePicture() async {
-    try {
-      await _initializeControllerFuture;
-      final image = await _controller.takePicture();
-
-      await ImageSaverService.saveImageToGallery(image);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image saved to datasetcam folder!')),
-      );
-    } catch (e) {
-      debugPrint('An error occurred during picture capture or saving: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save image: $e')),
-      );
-    }
+  void _onOverlayStateChanged(bool value) {
+    if (!mounted) return;
+    setState(() {
+      _isRedOverlayActive = value;
+    });
   }
 
   @override
@@ -105,17 +91,31 @@ class _CameraScreenState extends State<CameraScreen> {
         title: const Text('Dataset Camera'),
         backgroundColor: Colors.black,
       ),
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return CameraPreview(_controller);
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+      body: Stack(
+        children: [
+          FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return CameraPreview(_controller);
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
+          if (_isRedOverlayActive)
+            Container(
+              color: Colors.red.withOpacity(1.0),
+            ),
+        ],
       ),
-      floatingActionButton: ShutterButton(onPressed: _takePicture),
+      floatingActionButton: ShutterButton(
+        onPressed: () => CameraSequenceService.takePictureSequence(
+          controller: _controller,
+          onOverlayStateChanged: _onOverlayStateChanged,
+          context: context,
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
