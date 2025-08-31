@@ -8,11 +8,11 @@ class ImageSaverService {
   static Future<void> saveImageToGallery(
     XFile image, {
     required int setNumber,
-    required String type,
+    required String type, // Will be 'neutral', 'red', 'green', or 'blue'
   }) async {
     try {
       final fileName = '${setNumber}_$type.png';
-      
+
       if (Platform.isAndroid) {
         final Directory? extDir = await getExternalStorageDirectory();
         if (extDir == null) throw Exception('Could not get external storage directory.');

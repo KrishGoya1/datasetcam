@@ -5,10 +5,11 @@ import 'package:gal/gal.dart';
 
 class CameraSequenceService {
   static int _imageCounter = 1;
+  static const Duration _overlayDelay = Duration(milliseconds: 500); // Delay for overlay to render
 
   static Future<void> takePictureSequence({
     required CameraController controller,
-    required void Function(bool) onOverlayStateChanged,
+    required void Function(Color?) onColorOverlayStateChanged,
     required BuildContext context,
   }) async {
     try {
@@ -20,11 +21,9 @@ class CameraSequenceService {
         type: 'neutral',
       );
 
-      // 2. Tell the UI to turn the screen red
-      onOverlayStateChanged(true);
-
-      // 3. Wait for the UI to update, then capture the red image
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 2. Capture the red image
+      onColorOverlayStateChanged(const Color.fromARGB(255, 255, 17, 0));
+      await Future.delayed(_overlayDelay);
       final redImage = await controller.takePicture();
       await ImageSaverService.saveImageToGallery(
         redImage,
@@ -32,24 +31,46 @@ class CameraSequenceService {
         type: 'red',
       );
 
-      // 4. Tell the UI to hide the red overlay and increment the counter
-      onOverlayStateChanged(false);
+      // 3. Capture the green image
+      onColorOverlayStateChanged(const Color.fromARGB(255, 0, 255, 8));
+      await Future.delayed(_overlayDelay);
+      final greenImage = await controller.takePicture();
+      await ImageSaverService.saveImageToGallery(
+        greenImage,
+        setNumber: _imageCounter,
+        type: 'green',
+      );
+
+      // 4. Capture the blue image
+      onColorOverlayStateChanged(const Color.fromARGB(255, 0, 140, 255));
+      await Future.delayed(_overlayDelay);
+      final blueImage = await controller.takePicture();
+      await ImageSaverService.saveImageToGallery(
+        blueImage,
+        setNumber: _imageCounter,
+        type: 'blue',
+      );
+
+      // 5. Reset overlay and increment counter
+      onColorOverlayStateChanged(null); // No overlay
       _imageCounter++;
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Set $_imageCounter captured!'),
+          content: Text('Set ${_imageCounter - 1} captured (neutral, red, green, blue)!'),
         ),
       );
     } on GalException catch (e) {
       debugPrint('GalException: ${e.type.message}');
+      onColorOverlayStateChanged(null); // Ensure overlay is removed on error
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save image: ${e.type.message}')),
       );
     } catch (e) {
       debugPrint('An unexpected error occurred: $e');
+      onColorOverlayStateChanged(null); // Ensure overlay is removed on error
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An unexpected error occurred: $e')),

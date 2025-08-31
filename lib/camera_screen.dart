@@ -19,7 +19,7 @@ class _CameraScreenState extends State<CameraScreen> {
   late Future<void> _initializeControllerFuture;
   bool isCameraReady = false;
   double _originalBrightness = 0;
-  bool _isRedOverlayActive = false;
+  Color? _currentOverlayColor; // Null means no overlay
 
   @override
   void initState() {
@@ -69,10 +69,10 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  void _onOverlayStateChanged(bool value) {
+  void _onColorOverlayStateChanged(Color? color) {
     if (!mounted) return;
     setState(() {
-      _isRedOverlayActive = value;
+      _currentOverlayColor = color;
     });
   }
 
@@ -103,16 +103,16 @@ class _CameraScreenState extends State<CameraScreen> {
               }
             },
           ),
-          if (_isRedOverlayActive)
+          if (_currentOverlayColor != null)
             Container(
-              color: Colors.red.withOpacity(1.0),
+              color: _currentOverlayColor!.withOpacity(1.0),
             ),
         ],
       ),
       floatingActionButton: ShutterButton(
         onPressed: () => CameraSequenceService.takePictureSequence(
           controller: _controller,
-          onOverlayStateChanged: _onOverlayStateChanged,
+          onColorOverlayStateChanged: _onColorOverlayStateChanged,
           context: context,
         ),
       ),
