@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:datasetcam/widgets/skeuomorphic_container.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -34,6 +35,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
       if (await customDir.exists()) {
         final allFiles = customDir.listSync().whereType<File>().toList();
+        
+        // Sort files by name to ensure consistent and complete loading
+        allFiles.sort((a, b) => path.basename(a.path).compareTo(path.basename(b.path)));
+        
         final Map<String, List<String>> fileMap = {};
 
         for (var file in allFiles) {
@@ -82,23 +87,21 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 itemCount: _photoSets.length,
                 itemBuilder: (context, index) {
                   final set = _photoSets[index];
-                  return Card(
-                    color: Colors.grey[900],
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 4.0,
-                        mainAxisSpacing: 4.0,
-                        children: set.map((filePath) {
-                          return Image.file(
-                            File(filePath),
-                            fit: BoxFit.cover,
-                          );
-                        }).toList(),
-                      ),
+                  return SkeuomorphicContainer(
+                    padding: const EdgeInsets.all(8.0),
+                    borderRadius: BorderRadius.circular(15.0),
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 4.0,
+                      mainAxisSpacing: 4.0,
+                      children: set.map((filePath) {
+                        return Image.file(
+                          File(filePath),
+                          fit: BoxFit.cover,
+                        );
+                      }).toList(),
                     ),
                   );
                 },
