@@ -1,32 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:datasetcam/camera_screen.dart';
-import 'package:screen_brightness/screen_brightness.dart';
+import 'package:datasetcam/home.dart';
 
 List<CameraDescription> cameras = [];
 
 Future<void> main() async {
-  // Add `screen_brightness: ^2.0.0` to your `pubspec.yaml`
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
     cameras = await availableCameras();
   } on CameraException catch (e) {
     debugPrint('Error: ${e.code}\nError Message: ${e.description}');
   }
-
-  runApp(const CameraApp());
+  runApp(const MyApp());
 }
 
-class CameraApp extends StatelessWidget {
-  const CameraApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Dataset Camera',
       theme: ThemeData.dark(),
-      home: CameraScreen(cameras: cameras),
+      home: Home(cameras: cameras),
     );
   }
 }
